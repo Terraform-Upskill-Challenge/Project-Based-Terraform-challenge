@@ -37,9 +37,6 @@ jobs:
           IS_MERGE="${{ steps.check-commit.outputs.is_merge }}"
           
           if [ "$IS_MERGE" != "true" ]; then
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "❌ DIRECT PUSH TO MAIN BRANCH DETECTED"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             echo "🚫 Direct pushes to the main branch are NOT allowed!"
             echo ""
@@ -63,7 +60,6 @@ jobs:
             echo ""
             echo "📚 See CONTRIBUTING.md for detailed instructions"
             echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             exit 1
           else
             echo "✅ This is a merge commit from a Pull Request - allowed"
