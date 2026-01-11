@@ -31,16 +31,54 @@ jobs:
             echo "⚠️  This appears to be a direct push"
           fi
 
+      - name: Check if user is repository admin
+        id: check-admin
+        run: |
+          # Check if the actor has admin permissions
+          # Repository admins/owners can push directly for initial setup
+          ACTOR="${{ github.actor }}"
+          REPO_OWNER="${{ github.repository_owner }}"
+          
+          # Allow repository owners/admins for initial setup
+          if [ "$ACTOR" == "$REPO_OWNER" ]; then
+            echo "is_admin=true" >> $GITHUB_OUTPUT
+            echo "✅ Actor is repository owner - allowing for initial setup"
+          else
+            echo "is_admin=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Actor is not repository owner"
+          fi
+
       - name: Block direct push to main branch
         run: |
           ACTOR="${{ github.actor }}"
           IS_MERGE="${{ steps.check-commit.outputs.is_merge }}"
+          IS_ADMIN="${{ steps.check-admin.outputs.is_admin }}"
           
-          if [ "$IS_MERGE" != "true" ]; then
+          # Allow merge commits and repository admins (for initial setup)
+          if [ "$IS_MERGE" == "true" ]; then
+            echo "✅ This is a merge commit from a Pull Request - allowed"
+            exit 0
+          elif [ "$IS_ADMIN" == "true" ]; then
+            echo "⚠️  WARNING: Direct push to main by repository owner detected"
             echo ""
-            echo "🚫 Direct pushes to the main branch are NOT allowed!"
+            echo "This is allowed for initial setup, but please use Pull Requests"
+            echo "for all future changes to maintain code quality and reviews."
             echo ""
-            echo "Actor: $ACTOR"
+            echo "For students and future changes, use this workflow:"
+            echo "1. Create a feature branch: git checkout -b feat/day-XX-description"
+            echo "2. Make changes and commit"
+            echo "3. Push branch and create Pull Request"
+            echo ""
+            exit 0
+          else
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🚫 DIRECT PUSH TO MAIN BRANCH DETECTED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "Direct pushes to the main branch are NOT allowed!"
+            echo ""
+            echo "👤 Actor: $ACTOR"
             echo "📍 Branch: ${{ github.ref }}"
             echo ""
             echo "📝 CORRECT WORKFLOW:"
@@ -60,7 +98,6 @@ jobs:
             echo ""
             echo "📚 See CONTRIBUTING.md for detailed instructions"
             echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             exit 1
-          else
-            echo "✅ This is a merge commit from a Pull Request - allowed"
           fi
