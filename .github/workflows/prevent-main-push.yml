@@ -1,0 +1,70 @@
+name: Prevent Direct Push to Main
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  prevent-main-push:
+    name: Block Direct Pushes to Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit author and message
+        id: check-commit
+        run: |
+          COMMIT_AUTHOR="${{ github.event.head_commit.author.name }}"
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          ACTOR="${{ github.actor }}"
+          
+          echo "Commit Author: $COMMIT_AUTHOR"
+          echo "GitHub Actor: $ACTOR"
+          echo "Commit Message: $COMMIT_MESSAGE"
+          
+          # Check if this looks like a direct push (not a merge commit)
+          if echo "$COMMIT_MESSAGE" | grep -qE "^Merge pull request|^Merge branch"; then
+            echo "is_merge=true" >> $GITHUB_OUTPUT
+            echo "✅ This appears to be a merge commit (from PR)"
+          else
+            echo "is_merge=false" >> $GITHUB_OUTPUT
+            echo "⚠️  This appears to be a direct push"
+          fi
+
+      - name: Block direct push to main branch
+        run: |
+          ACTOR="${{ github.actor }}"
+          IS_MERGE="${{ steps.check-commit.outputs.is_merge }}"
+          
+          if [ "$IS_MERGE" != "true" ]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ DIRECT PUSH TO MAIN BRANCH DETECTED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "🚫 Direct pushes to the main branch are NOT allowed!"
+            echo ""
+            echo "👤 Actor: $ACTOR"
+            echo "📍 Branch: ${{ github.ref }}"
+            echo ""
+            echo "📝 CORRECT WORKFLOW:"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "1. Create a feature branch:"
+            echo "   git checkout -b feat/day-XX-description"
+            echo ""
+            echo "2. Make your changes and commit:"
+            echo "   git add ."
+            echo "   git commit -m 'feat(day-XX): your commit message'"
+            echo ""
+            echo "3. Push to your fork:"
+            echo "   git push origin feat/day-XX-description"
+            echo ""
+            echo "4. Create a Pull Request on GitHub"
+            echo ""
+            echo "📚 See CONTRIBUTING.md for detailed instructions"
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          else
+            echo "✅ This is a merge commit from a Pull Request - allowed"
+          fi

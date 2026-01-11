@@ -1,0 +1,40 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform.tfstate.lock.info
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sensitive files
+*.pem
+*.key
+secrets/
+.env
+.env.local
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+pull_request_template.md
+SETUP_BRANCH_PROTECTION.md
+WORKFLOWS_SUMMARY.md
+PUSH_TO_GITHUB.md
+.github\README.md
+QUICKSTART.md
+FACILITATOR_GUIDE.md

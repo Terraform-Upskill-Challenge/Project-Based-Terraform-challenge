@@ -1,0 +1,170 @@
+name: Validate PR Template
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr-template:
+    name: Validate PR Template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Validate PR Template
+        id: validate-template
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Colors for output
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m' # No Color
+          
+          echo "🔍 Validating PR Template..."
+          echo ""
+          
+          ERRORS=0
+          WARNINGS=0
+          
+          # Check 1: PR Title format
+          echo "📋 Checking PR Title format..."
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|refactor|test|chore|style|perf)\s-\sDay\s[0-9]+:.* ]]; then
+            echo -e "${RED}❌ PR Title doesn't follow convention${NC}"
+            echo "   Expected format: [type] - Day XX: Brief Description"
+            echo "   Examples:"
+            echo "   - feat - Day 01: First Terraform Resource"
+            echo "   - fix - Day 03: Correct AMI Filter Configuration"
+            echo "   Current title: $PR_TITLE"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo -e "${GREEN}✅ PR Title format is correct${NC}"
+          fi
+          echo ""
+          
+          # Check 2: Type of Change is selected
+          echo "📋 Checking Type of Change..."
+          if echo "$PR_BODY" | grep -q "\[ \].*Feature:" && \
+             echo "$PR_BODY" | grep -q "\[ \].*Fix:" && \
+             echo "$PR_BODY" | grep -q "\[ \].*Docs:" && \
+             echo "$PR_BODY" | grep -q "\[ \].*Refactor:" && \
+             echo "$PR_BODY" | grep -q "\[ \].*Test:" && \
+             echo "$PR_BODY" | grep -q "\[ \].*Chore:"; then
+            # All checkboxes are unchecked
+            echo -e "${RED}❌ No Type of Change selected${NC}"
+            echo "   Please select at least one type of change"
+            ERRORS=$((ERRORS + 1))
+          else
+            SELECTED_COUNT=$(echo "$PR_BODY" | grep -c "\[x\].*Feature:\|\[x\].*Fix:\|\[x\].*Docs:\|\[x\].*Refactor:\|\[x\].*Test:\|\[x\].*Chore:" || true)
+            if [ "$SELECTED_COUNT" -eq 0 ]; then
+              echo -e "${RED}❌ No Type of Change selected${NC}"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo -e "${GREEN}✅ Type of Change selected${NC}"
+            fi
+          fi
+          echo ""
+          
+          # Check 3: Project & Day filled
+          echo "📋 Checking Project & Day..."
+          if echo "$PR_BODY" | grep -q "\*\*Project\*\*: \[Project"; then
+            echo -e "${RED}❌ Project not specified${NC}"
+            echo "   Please specify: Project 1, Project 2, or Project 3"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo -e "${GREEN}✅ Project specified${NC}"
+          fi
+          
+          if echo "$PR_BODY" | grep -q "\*\*Day\*\*: \[Day"; then
+            echo -e "${RED}❌ Day not specified${NC}"
+            echo "   Please specify the day number (e.g., Day 01, Day 11)"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo -e "${GREEN}✅ Day specified${NC}"
+          fi
+          echo ""
+          
+          # Check 4: Description filled
+          echo "📋 Checking Description..."
+          if echo "$PR_BODY" | grep -A 2 "## Description" | grep -q "<!-- Provide a clear"; then
+            echo -e "${YELLOW}⚠️  Description appears to be empty or using placeholder${NC}"
+            WARNINGS=$((WARNINGS + 1))
+          else
+            echo -e "${GREEN}✅ Description provided${NC}"
+          fi
+          echo ""
+          
+          # Check 5: Changes Made section
+          echo "📋 Checking Changes Made..."
+          if echo "$PR_BODY" | grep -A 5 "## Changes Made" | grep -q "^\s*-\s*$"; then
+            echo -e "${YELLOW}⚠️  Changes Made section appears incomplete${NC}"
+            WARNINGS=$((WARNINGS + 1))
+          else
+            echo -e "${GREEN}✅ Changes Made section filled${NC}"
+          fi
+          echo ""
+          
+          # Check 6: Acceptance Criteria
+          echo "📋 Checking Acceptance Criteria..."
+          UNCHECKED=$(echo "$PR_BODY" | grep -c "\[ \].*All acceptance criteria met" || true)
+          if [ "$UNCHECKED" -gt 0 ]; then
+            echo -e "${YELLOW}⚠️  Acceptance criteria checklist not completed${NC}"
+            WARNINGS=$((WARNINGS + 1))
+          else
+            echo -e "${GREEN}✅ Acceptance criteria checklist completed${NC}"
+          fi
+          echo ""
+          
+          # Check 7: Checklist section
+          echo "📋 Checking Final Checklist..."
+          UNCHECKED_ITEMS=$(echo "$PR_BODY" | grep -c "\[ \]" || true)
+          if [ "$UNCHECKED_ITEMS" -gt 3 ]; then
+            echo -e "${YELLOW}⚠️  Some checklist items are not checked${NC}"
+            echo "   Please review and check all applicable items"
+            WARNINGS=$((WARNINGS + 1))
+          else
+            echo -e "${GREEN}✅ Checklist items reviewed${NC}"
+          fi
+          echo ""
+          
+          # Summary
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Validation Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo -e "Errors: ${RED}$ERRORS${NC}"
+          echo -e "Warnings: ${YELLOW}$WARNINGS${NC}"
+          echo ""
+          
+          if [ "$ERRORS" -gt 0 ]; then
+            echo -e "${RED}❌ PR Template validation failed!${NC}"
+            echo ""
+            echo "Please fix the errors above and update your PR."
+            echo "See .github/pull_request_template.md for the template."
+            exit 1
+          elif [ "$WARNINGS" -gt 0 ]; then
+            echo -e "${YELLOW}⚠️  PR Template validation passed with warnings${NC}"
+            echo ""
+            echo "Please review the warnings above and consider updating your PR."
+            exit 0
+          else
+            echo -e "${GREEN}✅ PR Template validation passed!${NC}"
+            exit 0
+          fi
+
+      - name: Comment on PR
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **PR Template Validation Failed**\n\nPlease ensure your PR follows the template requirements:\n\n- ✅ PR Title follows convention: `[type] - Day XX: Description`\n- ✅ Type of Change is selected\n- ✅ Project and Day are specified\n- ✅ Description is filled\n- ✅ Changes Made section is completed\n- ✅ Acceptance Criteria checklist is checked\n- ✅ Final Checklist is reviewed\n\nSee [CONTRIBUTING.md](https://github.com/${{ github.repository }}/blob/main/CONTRIBUTING.md) for details.'
+            })
