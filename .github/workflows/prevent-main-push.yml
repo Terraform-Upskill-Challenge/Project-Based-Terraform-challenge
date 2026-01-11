@@ -40,7 +40,7 @@ jobs:
             echo ""
             echo "🚫 Direct pushes to the main branch are NOT allowed!"
             echo ""
-            echo "👤 Actor: $ACTOR"
+            echo "Actor: $ACTOR"
             echo "📍 Branch: ${{ github.ref }}"
             echo ""
             echo "📝 CORRECT WORKFLOW:"
