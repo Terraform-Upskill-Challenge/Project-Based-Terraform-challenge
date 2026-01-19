@@ -11,11 +11,11 @@ By the end of this day, you will:
 
 ## Prerequisites
 
-- [ ] Terraform installed (`terraform version`)
-- [ ] AWS CLI configured (`aws sts get-caller-identity`)
-- [ ] AWS account with appropriate permissions (S3 access)
-- [ ] Git repository forked and cloned locally
-- [ ] Text editor ready (VS Code with Terraform extension recommended)
+- [✅] Terraform installed (`terraform version`)
+- [✅] AWS CLI configured (`aws sts get-caller-identity`)
+- [✅] AWS account with appropriate permissions (S3 access)
+- [✅] Git repository forked and cloned locally
+- [✅] Text editor ready (VS Code with Terraform extension recommended)
 
 ## Getting Started
 
