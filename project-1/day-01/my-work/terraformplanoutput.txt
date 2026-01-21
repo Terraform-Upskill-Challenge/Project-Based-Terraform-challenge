@@ -1,0 +1,4 @@
+Plan: 1 to add, 0 to change, 0 to destroy.
+aws_s3_bucket.bucket_day1: Creating...
+aws_s3_bucket.bucket_day1: Creation complete after 1s [id=terraform-practice-christelle-day1]
+
