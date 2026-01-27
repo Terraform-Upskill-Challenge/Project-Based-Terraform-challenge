@@ -1,0 +1,14 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+
+# Sensitive or environment-specific values
+terraform.tfvars
+
+# OS/editor files
+.DS_Store
+.vscode/
